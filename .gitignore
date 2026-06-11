@@ -61,3 +61,13 @@ app_package_name.py
 
 .claude/
 .venv
+# --- 业务数据 / 敏感配置(勿公开) ---
+results/
+*.DS_Store
+.DS_Store
+accounts.json
+feishu_config.json
+feishu_pdd_config.json
+**/feishu_*.json
+debug/
+run.sh

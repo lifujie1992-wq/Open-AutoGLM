@@ -191,18 +191,25 @@ class ModelClient:
         Returns:
             Tuple of (thinking, action).
         """
-        # Rule 1: Check for finish(message=
-        if "finish(message=" in content:
-            parts = content.split("finish(message=", 1)
-            thinking = parts[0].strip()
-            action = "finish(message=" + parts[1]
-            return thinking, action
-
-        # Rule 2: Check for do(action=
-        if "do(action=" in content:
-            parts = content.split("do(action=", 1)
-            thinking = parts[0].strip()
-            action = "do(action=" + parts[1]
+        # Rules 1/2: prefer the LAST occurrence of do(action= or finish(message=,
+        # so spec-quoted examples earlier in the response don't shadow the
+        # actual action the model emits at the end of its reasoning.
+        last_do = content.rfind("do(action=")
+        last_finish = content.rfind("finish(message=")
+        last = max(last_do, last_finish)
+        if last >= 0:
+            thinking = content[:last].strip()
+            action = content[last:].replace("</answer>", "").strip()
+            # Truncate at the matching closing paren to drop trailing reasoning.
+            depth = 0
+            for i, ch in enumerate(action):
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        action = action[: i + 1]
+                        break
             return thinking, action
 
         # Rule 3: Fallback to legacy XML tag parsing
